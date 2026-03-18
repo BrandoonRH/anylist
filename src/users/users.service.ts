@@ -40,9 +40,8 @@ export class UsersService {
     }
   }
 
-  async findAll( roles: ValidRoles[] ): Promise<User[]> {
-
-    if ( roles.length === 0 ) 
+  async findAll(roles: ValidRoles[]): Promise<User[]> {
+    if (roles.length === 0)
       return this.userRepository.find({
         // TODO: No es necesario porque tenemos lazy la propiedad lastUpdateBy
         // relations: {
@@ -51,12 +50,11 @@ export class UsersService {
       });
 
     // ??? tenemos roles ['admin','superUser']
-    return this.userRepository.createQueryBuilder()
+    return this.userRepository
+      .createQueryBuilder()
       .andWhere('ARRAY[roles] && ARRAY[:...roles]')
-      .setParameter('roles', roles )
+      .setParameter('roles', roles)
       .getMany();
-
-  
   }
 
   async findOneByEmail(email: string): Promise<User> {
@@ -81,12 +79,52 @@ export class UsersService {
     throw new Error('Method not implemented');
   }
 
-  update(id: number, updateUserInput: UpdateUserInput) {
-    return `This action updates a #${id} user`;
+  async update(
+    id: string,
+    updateUserInput: UpdateUserInput,
+    updateBy: User,
+  ): Promise<User> {
+    try {
+      // preload() es el método más elegante de TypeORM para updates.
+      // Hace dos cosas en una sola llamada:
+      //   1. Busca la entidad en BD por el id que encuentre en el objeto.
+      //   2. Fusiona los nuevos valores sobre la entidad encontrada.
+      // Si el id no existe en BD, retorna undefined.
+      // Si existe, retorna la entidad con los campos actualizados listos para guardar.
+      //
+      // Sin preload harías:
+      //   const user = await this.userRepository.findOneBy({ id });
+      //   Object.assign(user, updateUserInput);
+      //   return this.userRepository.save(user);
+      //
+      // Con preload todo eso es una línea.
+      const user = await this.userRepository.preload({
+        ...updateUserInput,
+        id,
+      });
+
+      if (!user) throw new BadRequestException('Error en update User');
+
+      // Se registra quién realizó la modificación.
+      // Este campo se persiste como FK en la columna lastUpdateBy de la tabla users.
+      user.lastUpdateBy = updateBy;
+
+      return await this.userRepository.save(user);
+    } catch (error) {
+      this.handleDBErrors(error);
+    }
   }
 
-  async block(id: string): Promise<User> {
-    throw new Error('Method not implemented');
+  async block(id: string, adminUser: User): Promise<User> {
+    const userToBlock = await this.findOneById(id);
+
+    // Soft delete: solo se cambia el flag isActive.
+    // El registro permanece en BD con todos sus datos intactos.
+    userToBlock.isActive = false;
+    // Se registra qué admin realizó el bloqueo.
+    userToBlock.lastUpdateBy = adminUser;
+
+    return await this.userRepository.save(userToBlock);
   }
 
   // Centraliza el manejo de errores de BD en un solo lugar.

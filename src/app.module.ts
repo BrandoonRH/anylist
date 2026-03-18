@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -37,11 +38,32 @@ import { AuthModule } from './auth/auth.module';
 
     // Configuración de GraphQL — igual que en la sección anterior.
     // GraphQL no sabe nada de Postgres, solo expone el esquema al cliente.
-    GraphQLModule.forRoot<ApolloDriverConfig>({
+    /*  GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       playground: false,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       plugins: [ApolloServerPluginLandingPageLocalDefault()],
+    }), */
+    //Configuración con Auth
+    GraphQLModule.forRootAsync({
+      driver: ApolloDriver,
+      imports: [AuthModule],
+      inject: [JwtService],
+      useFactory: async (jwtService: JwtService) => ({
+        playground: false,
+        autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+        plugins: [ApolloServerPluginLandingPageLocalDefault],
+        // Desactiva la protección CSRF para que Apollo Sandbox
+        // pueda hacer la introspección inicial desde el navegador.
+        // Solo relevante en desarrollo — en producción el Sandbox no se expone
+        csrfPrevention: false,
+        context({ req }) {
+          const token = req.headers.authorization?.replace('Bearer ', '');
+          if (!token) throw Error('Token needed');
+          const payload = jwtService.decode(token);
+          if (!payload) throw Error('Token not valid');
+        },
+      }),
     }),
     ItemsModule,
     UsersModule,
