@@ -11,6 +11,7 @@ import { SignupInput } from 'src/auth/dto/inputs';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import bcrypt from 'node_modules/bcryptjs';
+import { ValidRoles } from 'src/auth/enums/valid-roles.enum';
 
 @Injectable()
 export class UsersService {
@@ -39,8 +40,23 @@ export class UsersService {
     }
   }
 
-  async findAll(): Promise<User[]> {
-    return []; // TODO: implementar con filtros por usuario
+  async findAll( roles: ValidRoles[] ): Promise<User[]> {
+
+    if ( roles.length === 0 ) 
+      return this.userRepository.find({
+        // TODO: No es necesario porque tenemos lazy la propiedad lastUpdateBy
+        // relations: {
+        //   lastUpdateBy: true
+        // }
+      });
+
+    // ??? tenemos roles ['admin','superUser']
+    return this.userRepository.createQueryBuilder()
+      .andWhere('ARRAY[roles] && ARRAY[:...roles]')
+      .setParameter('roles', roles )
+      .getMany();
+
+  
   }
 
   async findOneByEmail(email: string): Promise<User> {
