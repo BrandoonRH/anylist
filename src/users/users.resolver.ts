@@ -1,4 +1,13 @@
-import { Resolver, Query, Mutation, Args, Int, ID } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  Int,
+  ID,
+  ResolveField,
+  Parent,
+} from '@nestjs/graphql';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
 import { ValidRolesArgs } from './dto/args/roles.arg';
@@ -7,6 +16,7 @@ import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { UpdateUserInput } from './dto/update-user.input';
+import { ItemsService } from 'src/items/items.service';
 
 // @UseGuards a nivel de clase protege TODAS las queries y mutations de este resolver.
 // Es más limpio que decorar método por método cuando todos requieren autenticación.
@@ -14,7 +24,10 @@ import { UpdateUserInput } from './dto/update-user.input';
 @Resolver(() => User)
 @UseGuards(JwtAuthGuard)
 export class UsersResolver {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly itemsService: ItemsService,
+  ) {}
 
   // @CurrentUser([ValidRoles.admin, ValidRoles.superUser]) hace dos cosas:
   // 1. Extrae el usuario autenticado del contexto del request.
@@ -58,5 +71,13 @@ export class UsersResolver {
     @CurrentUser([ValidRoles.admin]) user: User,
   ): Promise<User> {
     return this.usersService.block(id, user);
+  }
+
+  @ResolveField(() => Int, { name: 'itemCount' })
+  async itemCount(
+    @CurrentUser([ValidRoles.admin]) adminUser: User,
+    @Parent() user: User,
+  ): Promise<number> {
+    return this.itemsService.itemCountByUser(user);
   }
 }

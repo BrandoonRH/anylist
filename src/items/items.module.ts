@@ -13,6 +13,7 @@ import { Item } from './entities/item.entity';
     // Es el equivalente modular de forRoot() — uno configura la conexión,
     // el otro registra qué entidades usa cada módulo.
     TypeOrmModule.forFeature([Item])
-  ]
+  ], 
+  exports: [ItemsService]
 })
 export class ItemsModule {}

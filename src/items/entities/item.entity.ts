@@ -1,5 +1,6 @@
 import { ObjectType, Field, Int, ID, Float } from '@nestjs/graphql';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from 'src/users/entities/user.entity';
+import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 // Esta clase tiene DOS responsabilidades simultáneas gracias a dos decoradores:
 //
@@ -29,9 +30,9 @@ export class Item {
   @Field(() => String)
   name: string;
 
-  @Column()
+  /* @Column()
   @Field(() => Float)
-  quantity: number;
+  quantity: number; */
 
   // nullable: true en @Column() → la columna acepta NULL en Postgres.
   // nullable: true en @Field() → el campo es opcional en el esquema GraphQL.
@@ -39,6 +40,13 @@ export class Item {
   @Column({ nullable: true })
   @Field(() => Float, { nullable: true })
   quantityUnits?: string;
+
+  // stores
+  // user
+  @ManyToOne( () => User, (user) => user.items, { nullable: false, lazy: true })
+  @Index('userId-index')
+  @Field( () => User )
+  user: User;
 
 }
 

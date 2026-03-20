@@ -38,14 +38,14 @@ import { JwtService } from '@nestjs/jwt';
 
     // Configuración de GraphQL — igual que en la sección anterior.
     // GraphQL no sabe nada de Postgres, solo expone el esquema al cliente.
-    /*  GraphQLModule.forRoot<ApolloDriverConfig>({
+     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       playground: false,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       plugins: [ApolloServerPluginLandingPageLocalDefault()],
-    }), */
+    }),
     //Configuración con Auth
-    GraphQLModule.forRootAsync({
+   /*  GraphQLModule.forRootAsync({
       driver: ApolloDriver,
       imports: [AuthModule],
       inject: [JwtService],
@@ -64,7 +64,7 @@ import { JwtService } from '@nestjs/jwt';
           if (!payload) throw Error('Token not valid');
         },
       }),
-    }),
+    }), */
     ItemsModule,
     UsersModule,
     AuthModule,

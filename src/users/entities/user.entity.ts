@@ -1,9 +1,11 @@
 import { ObjectType, Field, ID } from '@nestjs/graphql';
+import { Item } from 'src/items/entities/item.entity';
 import {
   Column,
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -55,6 +57,10 @@ export class User {
   @JoinColumn({ name: 'lastUpdateBy' }) // Nombre exacto de la columna FK en Postgres.
   @Field(() => User, { nullable: true }) // Expone la relación en el esquema GraphQL como nullable.
   lastUpdateBy?: User;
+
+  @OneToMany( () => Item, (item) => item.user, { lazy: true })
+  @Field( () => [Item] )
+  items: Item[];
 
   /*
    * ¿QUÉ ES lazy: true?

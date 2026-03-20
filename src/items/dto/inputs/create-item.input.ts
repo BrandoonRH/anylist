@@ -12,9 +12,9 @@ export class CreateItemInput {
   // Float es el tipo GraphQL para números decimales.
   // En la sección anterior usamos Int (enteros).
   // La cantidad de un ítem puede ser 1.5 kg, 0.75 l, etc — Float es el correcto.
-  @Field(() => Float)
+  /* @Field(() => Float)
   @IsPositive()
-  quantity: number;
+  quantity: number; */
 
   // nullable: true → opcional en el esquema GraphQL.
   // @IsOptional() → opcional en la validación del pipe.
