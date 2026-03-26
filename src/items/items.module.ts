@@ -14,6 +14,6 @@ import { Item } from './entities/item.entity';
     // el otro registra qué entidades usa cada módulo.
     TypeOrmModule.forFeature([Item])
   ], 
-  exports: [ItemsService]
+  exports: [ItemsService, TypeOrmModule]
 })
 export class ItemsModule {}
