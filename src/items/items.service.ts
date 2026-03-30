@@ -1,14 +1,19 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateItemInput } from './dto/inputs/create-item.input';
 import { UpdateItemInput } from './dto/inputs/update-item.input';
 import { Item } from './entities/item.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
+import { PaginationArgs } from 'src/common/dto/args/pagination.args';
+import { SearchArgs } from 'src/common/dto/args/search.args';
 
 @Injectable()
 export class ItemsService {
-
   // @InjectRepository inyecta el repositorio de TypeORM para la entidad Item.
   // Repository<Item> es la interfaz que provee TypeORM con todos los métodos
   // de acceso a BD: find, findOneBy, save, remove, preload, etc.
@@ -21,20 +26,42 @@ export class ItemsService {
   async create(createItemInput: CreateItemInput, user: User): Promise<Item> {
     // .create() genera una instancia de Item con los datos del input.
     // No persiste nada aún — solo prepara el objeto.
-    const newItem = this.itemsRepository.create({...createItemInput, user});
+    const newItem = this.itemsRepository.create({ ...createItemInput, user });
     // .save() ejecuta el INSERT en Postgres y retorna la entidad con id generado.
     return await this.itemsRepository.save(newItem);
   }
 
-  async findAll(user: User): Promise<Item[]> {
-    'SELECT * FROM items WHERE userId = "uuid-user" '
-    return this.itemsRepository.find({
-      where: {
-        user: {
-          id: user.id
-        }
-      }
-    });
+  async findAll(
+    user: User,
+    paginationArgs: PaginationArgs,
+    searchArgs: SearchArgs,
+  ): Promise<Item[]> {
+    const { limit, offset } = paginationArgs;
+    const { search } = searchArgs;
+
+    const queryBuilder = this.itemsRepository
+      .createQueryBuilder()
+      .take(limit)
+      .skip(offset)
+      .where(`"userId" = :userId`, { userId: user.id });
+
+    if (search) {
+      queryBuilder.andWhere('LOWER(name) like :name', {
+        name: `%${search.toLowerCase()}%`,
+      });
+    }
+
+    return queryBuilder.getMany();
+    // return this.itemsRepository.find({
+    //   take: limit,
+    //   skip: offset,
+    //   where: {
+    //     user: {
+    //       id: user.id
+    //     },
+    //     name: Like(`%${ search.toLowerCase() }%`)
+    //   }
+    // });
   }
 
   async findOne(id: string, user: User): Promise<Item> {
@@ -44,22 +71,25 @@ export class ItemsService {
         id: user.id
       }
     }) */
-    const item = await this.itemsRepository.findOneBy({ id }); 
+    const item = await this.itemsRepository.findOneBy({ id });
     if (!item) throw new NotFoundException(`Item with id: ${id} not found`);
-    if(item.user.id !== user.id) throw new ConflictException('No tienes permisos para ver este Item')
+    if (item.user.id !== user.id)
+      throw new ConflictException('No tienes permisos para ver este Item');
     return item;
   }
 
-  async update(id: string, updateItemInput: UpdateItemInput, user: User ): Promise<Item> {
-
-    await this.findOne( id, user );
+  async update(
+    id: string,
+    updateItemInput: UpdateItemInput,
+    user: User,
+  ): Promise<Item> {
+    await this.findOne(id, user);
     //? const item = await this.itemsRepository.preload({ ...updateItemInput, user });
-    const item = await this.itemsRepository.preload( updateItemInput );
+    const item = await this.itemsRepository.preload(updateItemInput);
 
-    if ( !item ) throw new NotFoundException(`Item with id: ${ id } not found`);
+    if (!item) throw new NotFoundException(`Item with id: ${id} not found`);
 
-    return this.itemsRepository.save( item );
-
+    return this.itemsRepository.save(item);
   }
 
   async remove(id: string, user: User): Promise<Item> {
@@ -71,15 +101,13 @@ export class ItemsService {
     return { ...item, id };
   }
 
-  async itemCountByUser( user: User ): Promise<number> {
-    
+  async itemCountByUser(user: User): Promise<number> {
     return this.itemsRepository.count({
       where: {
         user: {
-          id: user.id
-        }
-      }
-    })
-
+          id: user.id,
+        },
+      },
+    });
   }
 }

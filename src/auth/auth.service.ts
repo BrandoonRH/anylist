@@ -7,7 +7,7 @@ import { AuthResponse } from './types/auth-response.types';
 import { LoginInput, SignupInput } from './dto/inputs';
 import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
-import bcrypt from 'node_modules/bcryptjs';
+import bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()

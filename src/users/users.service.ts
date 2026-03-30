@@ -10,7 +10,7 @@ import { User } from './entities/user.entity';
 import { SignupInput } from 'src/auth/dto/inputs';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import bcrypt from 'node_modules/bcryptjs';
+import bcrypt from 'bcryptjs';
 import { ValidRoles } from 'src/auth/enums/valid-roles.enum';
 
 @Injectable()
