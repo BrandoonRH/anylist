@@ -20,6 +20,8 @@ import { ItemsService } from 'src/items/items.service';
 import { Item } from 'src/items/entities/item.entity';
 import { PaginationArgs } from 'src/common/dto/args/pagination.args';
 import { SearchArgs } from 'src/common/dto/args/search.args';
+import { ListService } from 'src/list/list.service';
+import { List } from 'src/list/entities/list.entity';
 
 // @UseGuards a nivel de clase protege TODAS las queries y mutations de este resolver.
 // Es más limpio que decorar método por método cuando todos requieren autenticación.
@@ -30,6 +32,7 @@ export class UsersResolver {
   constructor(
     private readonly usersService: UsersService,
     private readonly itemsService: ItemsService,
+    private readonly listService: ListService,
   ) {}
 
   // @CurrentUser([ValidRoles.admin, ValidRoles.superUser]) hace dos cosas:
@@ -92,5 +95,23 @@ export class UsersResolver {
     @Args() search: SearchArgs,
   ): Promise<Item[]> {
     return this.itemsService.findAll(user, paginationArgs, search);
+  }
+
+  @ResolveField(() => Int, { name: 'listCount' })
+  async listCount(
+    @CurrentUser([ValidRoles.admin]) adminUser: User,
+    @Parent() user: User,
+  ): Promise<number> {
+    return this.listService.listCountByUser(user);
+  }
+
+  @ResolveField(() => [List], { name: 'lists' })
+  async getListsByUser(
+    @CurrentUser([ValidRoles.admin]) adminUser: User,
+    @Parent() user: User,
+    @Args() paginationArgs: PaginationArgs,
+    @Args() searchArgs: SearchArgs,
+  ): Promise<List[]> {
+    return this.listService.findAll(user, paginationArgs, searchArgs);
   }
 }
