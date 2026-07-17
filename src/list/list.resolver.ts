@@ -19,6 +19,8 @@ import { UpdateListInput } from './dto/update-list.input';
 import { ListService } from './list.service';
 import { PaginationArgs } from 'src/common/dto/args/pagination.args';
 import { SearchArgs } from 'src/common/dto/args/search.args';
+import { ListItem } from 'src/list-item/entities/list-item.entity';
+import { ListItemService } from 'src/list-item/list-item.service';
 
 @Resolver(() => List)
 @UseGuards( JwtAuthGuard )
@@ -26,7 +28,7 @@ export class ListResolver {
 
   constructor(
     private readonly listsService: ListService,
-   /*  private readonly listItemsService: ListItemService */
+    private readonly listItemsService: ListItemService
   ) {}
 
   @Mutation(() => List)
@@ -70,7 +72,7 @@ export class ListResolver {
     return this.listsService.remove( id, user );
   }
 
- /*  @ResolveField( () => [ListItem], { name: 'items' } )
+  @ResolveField( () => [ListItem], { name: 'items' } )
   async getListItems(
     @Parent() list: List,
     @Args() paginationArgs: PaginationArgs,
@@ -79,13 +81,13 @@ export class ListResolver {
 
     return this.listItemsService.findAll( list, paginationArgs, searchArgs );
   }
- */
 
- /*  @ResolveField( () => Number, { name: 'totalItems' } )
+
+  @ResolveField( () => Number, { name: 'totalItems' } )
   async countListItemsByList(
     @Parent() list: List,
   ): Promise<number> {
     return this.listItemsService.countListItemsByList( list );
-  } */
+  }
 
 }
